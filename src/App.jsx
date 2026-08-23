@@ -30,14 +30,13 @@ const inputStyle = {
   fontFamily: "inherit", letterSpacing: 1, marginBottom: 14, WebkitAppearance: "none",
 };
 
-// FormModal con refs para iOS
+// FormModal usando FormData nativo
 function FormModal({ title, fields, onSave, onClose, loading }) {
-  const refs = {};
-  fields.forEach(f => { refs[f.key] = React.createRef(); });
   const handleSave = () => {
     const data = {};
     fields.forEach(f => {
-      if (refs[f.key].current) data[f.key] = refs[f.key].current.value;
+      const inputs = document.getElementsByName(f.key);
+      if (inputs.length > 0) data[f.key] = inputs[0].value;
     });
     onSave(data);
   };
@@ -49,9 +48,12 @@ function FormModal({ title, fields, onSave, onClose, loading }) {
           <div key={f.key}>
             <label style={{ color: "rgba(255,255,255,0.3)", fontSize: 9, letterSpacing: 2, display: "block", marginBottom: 6 }}>{f.label}</label>
             <input
-              ref={refs[f.key]}
+              name={f.key}
+              type="text"
               placeholder={f.placeholder}
               autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
               style={inputStyle}
             />
           </div>
@@ -160,9 +162,15 @@ export default function AdminPanel() {
   };
 
   const crearVehiculo = async (formData) => {
-    if (!formData.codigo) return;
+    alert(`Debug: codigo="${formData.codigo}" descripcion="${formData.descripcion}"`);
+    const codigo = formData.codigo?.trim();
+    if (!codigo) {
+      alert("Por favor ingresa el código.");
+      return;
+    }
     setFormLoading(true);
-    await supabasePost("vehiculos", { empresa_id: empresa.id, codigo: formData.codigo, descripcion: formData.descripcion || "", activo: true });
+    const ok = await supabasePost("vehiculos", { empresa_id: empresa.id, codigo, descripcion: formData.descripcion?.trim() || "", activo: true });
+    if (!ok) alert("Error al guardar vehículo.");
     await loadData(adminUser.empresa_id);
     setFormLoading(false);
     setShowForm(null);
