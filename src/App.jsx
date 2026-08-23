@@ -97,9 +97,16 @@ export default function AdminPanel() {
   };
 
   const crearConductor = async (formData) => {
-    if (!formData.nombre || !formData.usuario) return;
+    const nombre = formData.nombre?.trim();
+    const usuario = formData.usuario?.trim();
+    const pin = formData.pin?.trim() || "1234";
+    if (!nombre || !usuario) {
+      alert("Por favor ingresa nombre y usuario.");
+      return;
+    }
     setFormLoading(true);
-    await supabasePost("conductores", { empresa_id: empresa.id, nombre: formData.nombre, usuario: formData.usuario, pin: formData.pin || "1234", activo: true });
+    const ok = await supabasePost("conductores", { empresa_id: empresa.id, nombre, usuario, pin, activo: true });
+    if (!ok) alert("Error al guardar. Intenta de nuevo.");
     await loadData(adminUser.empresa_id);
     setFormLoading(false);
     setShowForm(null);
@@ -133,9 +140,18 @@ export default function AdminPanel() {
     fontFamily: "inherit", letterSpacing: 1, marginBottom: 14, WebkitAppearance: "none",
   };
 
-  // Modal component with local state to avoid re-render keyboard issue
+  // Modal component with refs to avoid mobile keyboard issues
   const FormModal = ({ title, fields, onSave, onClose }) => {
-    const [local, setLocal] = useState({});
+    const refs = {};
+    fields.forEach(f => { refs[f.key] = { current: null }; });
+    const handleSave = () => {
+      const data = {};
+      fields.forEach(f => {
+        const el = document.getElementById(`field-${f.key}`);
+        if (el) data[f.key] = el.value;
+      });
+      onSave(data);
+    };
     return (
       <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
         <div style={{ width: "100%", maxWidth: 400, background: "#0A0A0A", borderRadius: 4, border: `1px solid rgba(0,255,136,0.2)`, padding: 24, boxShadow: `0 0 40px rgba(0,255,136,0.1)` }}>
@@ -144,15 +160,14 @@ export default function AdminPanel() {
             <div key={f.key}>
               <label style={{ color: "rgba(255,255,255,0.3)", fontSize: 9, letterSpacing: 2, display: "block", marginBottom: 6 }}>{f.label}</label>
               <input
+                id={`field-${f.key}`}
                 placeholder={f.placeholder}
-                defaultValue=""
-                onBlur={e => setLocal(p => ({...p, [f.key]: e.target.value}))}
                 style={inputStyle}
               />
             </div>
           ))}
           <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-            <button onClick={() => onSave(local)} disabled={formLoading} style={{ flex: 1, padding: "14px", borderRadius: 2, border: `1px solid ${GREEN}`, background: GREEN_DIM, color: "#fff", fontSize: 11, fontWeight: 700, letterSpacing: 2, cursor: "pointer", boxShadow: `0 0 10px ${GREEN_GLOW}` }}>
+            <button onClick={handleSave} disabled={formLoading} style={{ flex: 1, padding: "14px", borderRadius: 2, border: `1px solid ${GREEN}`, background: GREEN_DIM, color: "#fff", fontSize: 11, fontWeight: 700, letterSpacing: 2, cursor: "pointer", boxShadow: `0 0 10px ${GREEN_GLOW}` }}>
               {formLoading ? "GUARDANDO..." : "GUARDAR"}
             </button>
             <button onClick={onClose} style={{ padding: "14px 16px", borderRadius: 2, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.4)", fontSize: 11, cursor: "pointer" }}>
