@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 const SUPABASE_URL = "https://ahuraftnoxslotrcfhun.supabase.co";
 const SUPABASE_KEY = "sb_publishable_9Up-_iimijqn6NdiOzUrNw_b_RPAQGg";
@@ -30,16 +30,14 @@ const inputStyle = {
   fontFamily: "inherit", letterSpacing: 1, marginBottom: 14, WebkitAppearance: "none",
 };
 
-// FormModal con formulario nativo para evitar problemas de teclado en iOS
+// FormModal con refs para iOS
 function FormModal({ title, fields, onSave, onClose, loading }) {
-  const formRef = { current: null };
+  const refs = {};
+  fields.forEach(f => { refs[f.key] = React.createRef(); });
   const handleSave = () => {
-    const form = document.querySelector('#bp-modal-form');
-    if (!form) return;
     const data = {};
     fields.forEach(f => {
-      const el = form.querySelector(`[name="${f.key}"]`);
-      if (el) data[f.key] = el.value;
+      if (refs[f.key].current) data[f.key] = refs[f.key].current.value;
     });
     onSave(data);
   };
@@ -47,27 +45,25 @@ function FormModal({ title, fields, onSave, onClose, loading }) {
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
       <div style={{ width: "100%", maxWidth: 400, background: "#0A0A0A", borderRadius: 4, border: "1px solid rgba(0,255,136,0.2)", padding: 24 }}>
         <div style={{ color: "#fff", fontSize: 12, fontWeight: 700, letterSpacing: 3, marginBottom: 20 }}>{title}</div>
-        <form id="bp-modal-form" onSubmit={e => { e.preventDefault(); handleSave(); }}>
-          {fields.map(f => (
-            <div key={f.key}>
-              <label style={{ color: "rgba(255,255,255,0.3)", fontSize: 9, letterSpacing: 2, display: "block", marginBottom: 6 }}>{f.label}</label>
-              <input
-                name={f.key}
-                placeholder={f.placeholder}
-                autoComplete="off"
-                style={inputStyle}
-              />
-            </div>
-          ))}
-          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-            <button type="submit" disabled={loading} style={{ flex: 1, padding: "14px", borderRadius: 2, border: "1px solid #00FF88", background: "rgba(0,255,136,0.08)", color: "#fff", fontSize: 11, fontWeight: 700, letterSpacing: 2, cursor: "pointer" }}>
-              {loading ? "GUARDANDO..." : "GUARDAR"}
-            </button>
-            <button type="button" onClick={onClose} style={{ padding: "14px 16px", borderRadius: 2, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.4)", fontSize: 11, cursor: "pointer" }}>
-              CANCELAR
-            </button>
+        {fields.map(f => (
+          <div key={f.key}>
+            <label style={{ color: "rgba(255,255,255,0.3)", fontSize: 9, letterSpacing: 2, display: "block", marginBottom: 6 }}>{f.label}</label>
+            <input
+              ref={refs[f.key]}
+              placeholder={f.placeholder}
+              autoComplete="off"
+              style={inputStyle}
+            />
           </div>
-        </form>
+        ))}
+        <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+          <button onClick={handleSave} disabled={loading} style={{ flex: 1, padding: "14px", borderRadius: 2, border: "1px solid #00FF88", background: "rgba(0,255,136,0.08)", color: "#fff", fontSize: 11, fontWeight: 700, letterSpacing: 2, cursor: "pointer" }}>
+            {loading ? "GUARDANDO..." : "GUARDAR"}
+          </button>
+          <button onClick={onClose} style={{ padding: "14px 16px", borderRadius: 2, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.4)", fontSize: 11, cursor: "pointer" }}>
+            CANCELAR
+          </button>
+        </div>
       </div>
     </div>
   );
