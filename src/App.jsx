@@ -20,6 +20,10 @@ async function supabasePost(table, body) {
     headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
     body: JSON.stringify(body),
   });
+  if (!res.ok) {
+    const err = await res.text();
+    alert(`Error Supabase: ${err}`);
+  }
   return res.ok;
 }
 
@@ -36,7 +40,12 @@ function FormModal({ title, fields, onSave, onClose, loading }) {
     const data = {};
     fields.forEach(f => {
       const inputs = document.getElementsByName(f.key);
-      if (inputs.length > 0) data[f.key] = inputs[0].value;
+      if (inputs.length > 0) {
+        // Remove iOS smart quotes and trim
+        data[f.key] = inputs[0].value
+          .replace(/[\u2018\u2019\u201C\u201D\u0060\u00B4]/g, "")
+          .trim();
+      }
     });
     onSave(data);
   };
@@ -162,7 +171,6 @@ export default function AdminPanel() {
   };
 
   const crearVehiculo = async (formData) => {
-    alert(`Debug: codigo="${formData.codigo}" descripcion="${formData.descripcion}"`);
     const codigo = formData.codigo?.trim();
     if (!codigo) {
       alert("Por favor ingresa el código.");
